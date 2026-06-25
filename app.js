@@ -1,7 +1,7 @@
 // ============================================
 // CONFIGURACIÓN GLOBAL
 // ============================================
-const SCRIPT_URL = 'TU_URL_DE_APPS_SCRIPT_AQUÍ';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyw-DBn98DuOtV1KyAzl2S4xfPjLoPFM48Rf0aCDac4A6vk-_uWD97T-yAputy5ECM/exec';
 
 // ============================================
 // ESTADO DE LA APLICACIÓN

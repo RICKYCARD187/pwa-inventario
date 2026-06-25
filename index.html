@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="description" content="Sistema de control de inventario y carrito de compras">
+    <title>Sistema de Inventario</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%232563eb' width='100' height='100' rx='20'/><text y='70' x='50' font-size='60' text-anchor='middle' fill='white'>📦</text></svg>">
+</head>
+<body>
+    <!-- HEADER -->
+    <header class="app-header">
+        <div class="header-content">
+            <div class="logo">
+                <span class="logo-icon">📦</span>
+                <h1>Inventario</h1>
+            </div>
+            <div class="header-actions">
+                <button id="btn-theme" class="btn-icon" title="Cambiar tema" aria-label="Cambiar tema">
+                    <span class="icon-light">🌙</span>
+                    <span class="icon-dark">☀️</span>
+                </button>
+                <button id="btn-cart-badge" class="btn-icon cart-badge" title="Ver carrito" aria-label="Ver carrito">
+                    🛒 <span id="cart-count">0</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- NAVEGACIÓN -->
+    <nav class="app-nav">
+        <button class="nav-tab active" data-view="catalog">
+            <span class="nav-icon">🏪</span>
+            <span class="nav-text">Catálogo</span>
+        </button>
+        <button class="nav-tab" data-view="cart">
+            <span class="nav-icon">🛒</span>
+            <span class="nav-text">Carrito</span>
+        </button>
+        <button class="nav-tab" data-view="admin">
+            <span class="nav-icon">⚙️</span>
+            <span class="nav-text">Pedidos</span>
+        </button>
+    </nav>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="app-main">
+        <!-- VISTA: CATÁLOGO -->
+        <section id="view-catalog" class="view active">
+            <div class="view-header">
+                <h2>Catálogo de Prendas</h2>
+                <button id="btn-refresh" class="btn-secondary" title="Recargar inventario">
+                    🔄 Actualizar
+                </button>
+            </div>
+            <div id="search-bar" class="search-bar">
+                <input type="search" id="input-search" placeholder="Buscar por código o nombre..." aria-label="Buscar prendas">
+            </div>
+            <div id="catalog-grid" class="catalog-grid">
+                <div class="loading-state">
+                    <div class="spinner"></div>
+                    <p>Cargando inventario...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- VISTA: CARRITO -->
+        <section id="view-cart" class="view">
+            <div class="view-header">
+                <h2>Carrito de Compras</h2>
+                <button id="btn-clear-cart" class="btn-danger-outline" title="Vaciar carrito">
+                    🗑️ Vaciar
+                </button>
+            </div>
+            <div id="cart-content">
+                <div class="empty-state">
+                    <span class="empty-icon">🛒</span>
+                    <p>Tu carrito está vacío</p>
+                    <button class="btn-primary" onclick="switchView('catalog')">Ir al Catálogo</button>
+                </div>
+            </div>
+            <div id="cart-summary" class="cart-summary hidden">
+                <div class="summary-row">
+                    <span>Subtotal:</span>
+                    <span id="cart-subtotal">$0.00</span>
+                </div>
+                <div class="summary-row total">
+                    <span>Total:</span>
+                    <span id="cart-total">$0.00</span>
+                </div>
+                <button id="btn-submit-order" class="btn-primary btn-full">
+                    ✅ Confirmar Pedido (Generar Ticket PENDIENTE)
+                </button>
+            </div>
+        </section>
+
+        <!-- VISTA: ADMINISTRACIÓN -->
+        <section id="view-admin" class="view">
+            <div class="view-header">
+                <h2>Pedidos Registrados</h2>
+                <button id="btn-refresh-orders" class="btn-secondary" title="Recargar pedidos">
+                    🔄 Actualizar
+                </button>
+            </div>
+            <div id="orders-list" class="orders-list">
+                <div class="loading-state">
+                    <div class="spinner"></div>
+                    <p>Cargando pedidos...</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- MODAL DE CONFIRMACIÓN -->
+    <div id="modal-overlay" class="modal-overlay hidden">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modal-title">Confirmar</h3>
+                <button class="btn-icon modal-close" onclick="closeModal()" aria-label="Cerrar">✕</button>
+            </div>
+            <div class="modal-body">
+                <p id="modal-message"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeModal()">Cancelar</button>
+                <button id="modal-confirm" class="btn-primary">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATIONS -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- FOOTER -->
+    <footer class="app-footer">
+        <p>Sistema de Inventario &copy; 2026 — PWA</p>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>

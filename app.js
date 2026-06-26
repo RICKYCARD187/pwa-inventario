@@ -225,9 +225,20 @@ async function submitOrder() {
         return;
     }
 
+    // Validar datos del cliente
+    const cliente = document.getElementById('input-cliente')?.value.trim();
+    const telefono = document.getElementById('input-telefono')?.value.trim();
+    const direccion = document.getElementById('input-direccion')?.value.trim();
+    const ciudad = document.getElementById('input-ciudad')?.value.trim();
+
+    if (!cliente || !telefono || !direccion || !ciudad) {
+        showToast('⚠️ Completa todos los datos del cliente', 'error');
+        return;
+    }
+
     openModal(
         'Confirmar Pedido',
-        `Se generará un ticket PENDIENTE con ${appState.cart.length} producto(s). ¿Deseas continuar?`,
+        `Se generará un pedido para ${cliente} con ${appState.cart.length} producto(s). ¿Deseas continuar?`,
         async () => {
             const btnSubmit = document.getElementById('btn-submit-order');
             btnSubmit.disabled = true;
@@ -236,19 +247,31 @@ async function submitOrder() {
             try {
                 const orderData = {
                     action: 'saveOrder',
+                    cliente: cliente,
+                    telefono: telefono,
+                    direccion: direccion,
+                    ciudad: ciudad,
                     items: appState.cart.map(item => ({
                         codigo: item.codigo,
-                        nombre: item.nombre,
+                        producto: item.nombre,
+                        talla: item.talla || '',
+                        color: item.color || '',
                         precio: item.precio,
                         cantidad: item.cantidad
                     })),
                     total: calculateCartTotal(),
-                    fecha: new Date().toISOString()
+                    fecha: new Date().toLocaleDateString('es-ES'),
+                    hora: new Date().toLocaleTimeString('es-ES')
                 };
 
+                // SOLUCIÓN CORS: Enviar como text/plain para evitar preflight
                 const response = await fetch(SCRIPT_URL, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    mode: 'cors',
+                    redirect: 'follow',
+                    headers: {
+                        'Content-Type': 'text/plain;charset=utf-8',
+                    },
                     body: JSON.stringify(orderData)
                 });
 
@@ -258,12 +281,19 @@ async function submitOrder() {
 
                 const result = await response.json();
 
-                if (result.success) {
+                if (result.success || result.result === 'ok') {
                     appState.cart = [];
                     saveStateToStorage();
+                    
+                    // Limpiar formulario de cliente
+                    document.getElementById('input-cliente').value = '';
+                    document.getElementById('input-telefono').value = '';
+                    document.getElementById('input-direccion').value = '';
+                    document.getElementById('input-ciudad').value = '';
+                    
                     renderCart();
                     updateCartBadge();
-                    showToast('✅ Pedido registrado correctamente (PENDIENTE)', 'success');
+                    showToast('✅ Pedido registrado correctamente', 'success');
                     switchView('admin');
                     fetchOrders();
                 } else {
@@ -274,7 +304,7 @@ async function submitOrder() {
                 showToast('❌ Error: ' + error.message, 'error');
             } finally {
                 btnSubmit.disabled = false;
-                btnSubmit.textContent = '✅ Confirmar Pedido (Generar Ticket PENDIENTE)';
+                btnSubmit.textContent = '✅ Confirmar Pedido';
             }
         }
     );
@@ -284,7 +314,7 @@ async function submitOrder() {
 async function approvePayment(orderId) {
     openModal(
         'Confirmar Pago',
-        `¿Confirmas el pago del pedido #${orderId}? El estado cambiará a PAGADO y se descontará el stock.`,
+        `¿Confirmas el pago del pedido #${orderId}? El estado cambiará a PAGADO.`,
         async () => {
             try {
                 const payload = {
@@ -292,9 +322,14 @@ async function approvePayment(orderId) {
                     orderId: orderId
                 };
 
+                // SOLUCIÓN CORS: Enviar como text/plain
                 const response = await fetch(SCRIPT_URL, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    mode: 'cors',
+                    redirect: 'follow',
+                    headers: {
+                        'Content-Type': 'text/plain;charset=utf-8',
+                    },
                     body: JSON.stringify(payload)
                 });
 
@@ -304,10 +339,9 @@ async function approvePayment(orderId) {
 
                 const result = await response.json();
 
-                if (result.success) {
+                if (result.success || result.result === 'ok') {
                     showToast('✅ Pago confirmado correctamente', 'success');
                     fetchOrders();
-                    fetchInventory(); // Refrescar stock
                 } else {
                     throw new Error(result.message || 'Error al confirmar el pago');
                 }

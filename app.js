@@ -183,17 +183,28 @@ async function fetchInventory() {
             data = JSON.parse(responseText);
         } catch (parseError) {
             console.error('❌ No se pudo parsear JSON:', responseText);
-            throw new Error('La respuesta no es JSON válido: ' + responseText.substring(0, 100));
+            throw new Error('La respuesta no es JSON válido');
         }
 
         console.log('✅ Datos parseados:', data);
 
-        if (data.success !== undefined && data.data !== undefined) {
-            appState.inventory = data.data;
+        // ADAPTADO: Tu Apps Script devuelve {result: "ok", data: [...]}
+        if ((data.result === 'ok' || data.success === true) && data.data) {
+            // Mapear los campos para que coincidan con la estructura esperada
+            appState.inventory = data.data.map(item => ({
+                codigo: item.codigo,
+                nombre: item.producto || item.nombre || 'Sin nombre',
+                precio: parseFloat(item.precio) || 0,
+                stock: parseInt(item.stock) || 0,
+                talla: item.talla || '',
+                color: item.color || ''
+            }));
+            
+            console.log('📦 Inventario cargado:', appState.inventory.length, 'productos');
             renderCatalog();
-            showToast('Inventario cargado correctamente', 'success');
+            showToast(`✅ ${appState.inventory.length} productos cargados`, 'success');
         } else {
-            throw new Error('Formato de respuesta inesperado: ' + JSON.stringify(data));
+            throw new Error('Formato de respuesta inesperado');
         }
     } catch (error) {
         console.error('❌ Error completo:', error);
@@ -201,9 +212,6 @@ async function fetchInventory() {
             <div class="error-state" style="grid-column: 1 / -1;">
                 <p>⚠️ Error al cargar el inventario</p>
                 <p style="font-size: 0.875rem; margin-top: 8px; color: var(--color-danger);">${error.message}</p>
-                <p style="font-size: 0.75rem; margin-top: 8px; color: var(--color-text-secondary);">
-                    URL: ${SCRIPT_URL}
-                </p>
                 <button class="btn-primary mt-md" onclick="fetchInventory()">Reintentar</button>
             </div>
         `;
@@ -372,7 +380,9 @@ function renderCatalog(searchTerm = '') {
     if (term) {
         items = items.filter(item =>
             item.codigo?.toLowerCase().includes(term) ||
-            item.nombre?.toLowerCase().includes(term)
+            item.nombre?.toLowerCase().includes(term) ||
+            item.talla?.toLowerCase().includes(term) ||
+            item.color?.toLowerCase().includes(term)
         );
     }
 
@@ -403,10 +413,19 @@ function renderCatalog(searchTerm = '') {
         const cartItem = appState.cart.find(c => c.codigo === item.codigo);
         const currentQty = cartItem ? cartItem.cantidad : 1;
 
+        // Construir información adicional (talla y color)
+        const extraInfo = [];
+        if (item.talla) extraInfo.push(`Talla: ${item.talla}`);
+        if (item.color) extraInfo.push(`Color: ${item.color}`);
+        const extraInfoHtml = extraInfo.length > 0 
+            ? `<div class="product-extra-info">${extraInfo.join(' • ')}</div>` 
+            : '';
+
         return `
             <div class="product-card" data-code="${item.codigo}">
                 <span class="product-code">${item.codigo || 'S/C'}</span>
                 <h3 class="product-name">${item.nombre || 'Sin nombre'}</h3>
+                ${extraInfoHtml}
                 <div class="product-price">$${price.toFixed(2)}</div>
                 <div class="product-stock">
                     <span class="stock-badge ${stockClass}">${stockText}</span>

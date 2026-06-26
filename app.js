@@ -11,7 +11,7 @@ let appState = {
     cart: [],
     orders: [],
     currentView: 'catalog',
-    catalogViewMode: 'grid', // ← AGREGAR ESTA LÍNEA
+    catalogViewMode: 'grid',
     theme: 'light'
 };
 
@@ -219,6 +219,7 @@ async function fetchInventory() {
         showToast('Error: ' + error.message, 'error');
     }
 }
+
 // Enviar pedido
 async function submitOrder() {
     if (appState.cart.length === 0) {
@@ -318,91 +319,6 @@ async function submitOrder() {
     );
 }
 
-    // Validar datos del cliente
-    const cliente = document.getElementById('input-cliente')?.value.trim();
-    const telefono = document.getElementById('input-telefono')?.value.trim();
-    const direccion = document.getElementById('input-direccion')?.value.trim();
-    const ciudad = document.getElementById('input-ciudad')?.value.trim();
-
-    if (!cliente || !telefono || !direccion || !ciudad) {
-        showToast('⚠️ Completa todos los datos del cliente', 'error');
-        return;
-    }
-
-    openModal(
-        'Confirmar Pedido',
-        `Se generará un pedido para ${cliente} con ${appState.cart.length} producto(s). ¿Deseas continuar?`,
-        async () => {
-            const btnSubmit = document.getElementById('btn-submit-order');
-            btnSubmit.disabled = true;
-            btnSubmit.textContent = 'Procesando...';
-
-            try {
-                const orderData = {
-                    action: 'saveOrder',
-                    cliente: cliente,
-                    telefono: telefono,
-                    direccion: direccion,
-                    ciudad: ciudad,
-                    items: appState.cart.map(item => ({
-                        codigo: item.codigo,
-                        producto: item.nombre,
-                        talla: item.talla || '',
-                        color: item.color || '',
-                        precio: item.precio,
-                        cantidad: item.cantidad
-                    })),
-                    total: calculateCartTotal(),
-                    fecha: new Date().toLocaleDateString('es-ES'),
-                    hora: new Date().toLocaleTimeString('es-ES')
-                };
-
-                // SOLUCIÓN CORS: Enviar como text/plain para evitar preflight
-                const response = await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    mode: 'cors',
-                    redirect: 'follow',
-                    headers: {
-                        'Content-Type': 'text/plain;charset=utf-8',
-                    },
-                    body: JSON.stringify(orderData)
-                });
-
-                if (!response.ok) {
-                    throw new Error(`Error HTTP: ${response.status}`);
-                }
-
-                const result = await response.json();
-
-                if (result.success || result.result === 'ok') {
-                    appState.cart = [];
-                    saveStateToStorage();
-                    
-                    // Limpiar formulario de cliente
-                    document.getElementById('input-cliente').value = '';
-                    document.getElementById('input-telefono').value = '';
-                    document.getElementById('input-direccion').value = '';
-                    document.getElementById('input-ciudad').value = '';
-                    
-                    renderCart();
-                    updateCartBadge();
-                    showToast('✅ Pedido registrado correctamente', 'success');
-                    switchView('admin');
-                    fetchOrders();
-                } else {
-                    throw new Error(result.message || 'Error al registrar el pedido');
-                }
-            } catch (error) {
-                console.error('Error al enviar pedido:', error);
-                showToast('❌ Error: ' + error.message, 'error');
-            } finally {
-                btnSubmit.disabled = false;
-                btnSubmit.textContent = '✅ Confirmar Pedido';
-            }
-        }
-    );
-}
-
 // Confirmar pago
 async function approvePayment(orderId) {
     openModal(
@@ -470,13 +386,12 @@ async function fetchOrders() {
 
         const data = await response.json();
 
-        if (data.success && data.data) {
+        if ((data.success || data.result === 'ok') && data.data) {
             appState.orders = data.data;
             if (appState.currentView === 'admin') {
                 renderOrders();
             }
         } else {
-            // Si no existe la acción getOrders, mostrar estado vacío
             appState.orders = [];
             if (appState.currentView === 'admin') {
                 renderOrders();
@@ -567,7 +482,7 @@ function renderCatalogGrid(items, term) {
                 <span class="product-code">${item.codigo || 'S/C'}</span>
                 <h3 class="product-name">${item.nombre || 'Sin nombre'}</h3>
                 ${extraInfoHtml}
-                <div class="product-price">$${price.toFixed(2)}</div>
+                <div class="product-price">Bs ${price.toFixed(2)}</div>
                 <div class="product-stock">
                     <span class="stock-badge ${stockClass}">${stockText}</span>
                 </div>
@@ -659,51 +574,20 @@ function toggleCatalogView() {
     const icon = document.getElementById('toggle-icon');
     const text = document.getElementById('toggle-text');
     
-    if (appState.catalogViewMode === 'grid') {
-        icon.textContent = '☰';
-        text.textContent = 'Lista';
-    } else {
-        icon.textContent = '⊞';
-        text.textContent = 'Grid';
+    if (icon && text) {
+        if (appState.catalogViewMode === 'grid') {
+            icon.textContent = '☰';
+            text.textContent = 'Lista';
+        } else {
+            icon.textContent = '⊞';
+            text.textContent = 'Grid';
+        }
     }
     
-    // Re-renderizar con la nueva vista
-    const searchTerm = document.getElementById('input-search').value;
+    const searchTerm = document.getElementById('input-search')?.value || '';
     renderCatalog(searchTerm);
     
-    showToast(`Vista cambiada a: ${appState.catalogViewMode === 'grid' ? 'Cuadrícula' : 'Lista'}`, 'info');
-}
-
-        // Construir información adicional (talla y color)
-        const extraInfo = [];
-        if (item.talla) extraInfo.push(`Talla: ${item.talla}`);
-        if (item.color) extraInfo.push(`Color: ${item.color}`);
-        const extraInfoHtml = extraInfo.length > 0 
-            ? `<div class="product-extra-info">${extraInfo.join(' • ')}</div>` 
-            : '';
-
-        return `
-            <div class="product-card" data-code="${item.codigo}">
-                <span class="product-code">${item.codigo || 'S/C'}</span>
-                <h3 class="product-name">${item.nombre || 'Sin nombre'}</h3>
-                ${extraInfoHtml}
-                <div class="product-price">$${price.toFixed(2)}</div>
-                <div class="product-stock">
-                    <span class="stock-badge ${stockClass}">${stockText}</span>
-                </div>
-                <div class="product-actions">
-                    <div class="quantity-control">
-                        <button onclick="changeQty('${item.codigo}', -1)" ${stock === 0 ? 'disabled' : ''}>−</button>
-                        <input type="number" id="qty-${item.codigo}" value="${currentQty}" min="1" max="${stock}" onchange="validateQty('${item.codigo}', ${stock})">
-                        <button onclick="changeQty('${item.codigo}', 1)" ${stock === 0 ? 'disabled' : ''}>+</button>
-                    </div>
-                    <button class="btn-primary btn-sm" onclick="addToCart('${item.codigo}')" ${stock === 0 ? 'disabled' : ''}>
-                        ${cartItem ? '🔄 Actualizar' : '🛒 Agregar'}
-                    </button>
-                </div>
-            </div>
-        `;
-    }).join('');
+    showToast(`Vista: ${appState.catalogViewMode === 'grid' ? 'Cuadrícula' : 'Lista'}`, 'info');
 }
 
 function changeQty(code, delta) {
@@ -722,6 +606,16 @@ function changeQty(code, delta) {
     const inputList = document.getElementById(`qty-list-${code}`);
     if (inputGrid) inputGrid.value = newVal;
     if (inputList) inputList.value = newVal;
+}
+
+function validateQty(code, maxStock) {
+    const input = document.getElementById(`qty-${code}`) || document.getElementById(`qty-list-${code}`);
+    if (!input) return;
+    
+    let val = parseInt(input.value);
+    if (isNaN(val) || val < 1) val = 1;
+    if (val > maxStock) val = maxStock;
+    input.value = val;
 }
 
 // ============================================
@@ -762,6 +656,7 @@ function addToCart(code) {
     updateCartBadge();
     renderCatalog(document.getElementById('input-search').value);
 }
+
 function removeFromCart(code) {
     appState.cart = appState.cart.filter(item => item.codigo !== code);
     saveStateToStorage();
@@ -827,7 +722,7 @@ function renderCart() {
                 <div class="cart-item-info">
                     <div class="cart-item-name">${item.nombre}</div>
                     <div class="cart-item-code">${item.codigo}</div>
-                    <div class="cart-item-price">$${item.precio.toFixed(2)} c/u</div>
+                    <div class="cart-item-price">Bs ${item.precio.toFixed(2)} c/u</div>
                 </div>
                 <div class="cart-item-actions">
                     <div class="quantity-control">
@@ -836,7 +731,7 @@ function renderCart() {
                             onchange="updateCartItemQty('${item.codigo}', parseInt(this.value))">
                         <button onclick="updateCartItemQty('${item.codigo}', ${item.cantidad + 1})">+</button>
                     </div>
-                    <div class="cart-item-subtotal">$${subtotal.toFixed(2)}</div>
+                    <div class="cart-item-subtotal">Bs ${subtotal.toFixed(2)}</div>
                     <button class="btn-remove" onclick="removeFromCart('${item.codigo}')" title="Eliminar">🗑️</button>
                 </div>
             </div>
@@ -844,8 +739,8 @@ function renderCart() {
     }).join('');
 
     const subtotal = calculateCartTotal();
-    document.getElementById('cart-subtotal').textContent = `$${subtotal.toFixed(2)}`;
-    document.getElementById('cart-total').textContent = `$${subtotal.toFixed(2)}`;
+    document.getElementById('cart-subtotal').textContent = `Bs ${subtotal.toFixed(2)}`;
+    document.getElementById('cart-total').textContent = `Bs ${subtotal.toFixed(2)}`;
     summary.classList.remove('hidden');
 }
 

@@ -874,6 +874,18 @@ input {
 }
 
 /* ============================================
+   INFORMACIÓN ADICIONAL DE PRODUCTOS
+   ============================================ */
+.product-extra-info {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    background: var(--color-surface-hover);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    margin-top: var(--spacing-xs);
+}
+
+/* ============================================
    UTILIDADES
    ============================================ */
 .text-center { text-align: center; }

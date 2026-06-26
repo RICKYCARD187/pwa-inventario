@@ -1007,3 +1007,111 @@ input {
     margin-bottom: var(--spacing-sm);
     color: var(--color-text-secondary);
 }
+
+/* ============================================
+   BOTONES DE ACCIÓN DEL CATÁLOGO
+   ============================================ */
+.header-actions-catalog {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+/* ============================================
+   VISTA DE LISTA DETALLADA
+   ============================================ */
+.catalog-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.list-item {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    display: grid;
+    grid-template-columns: auto 1fr auto auto auto;
+    gap: var(--spacing-lg);
+    align-items: center;
+    transition: var(--transition);
+}
+
+.list-item:hover {
+    box-shadow: 0 4px 12px var(--color-shadow);
+    border-color: var(--color-primary);
+}
+
+.list-item-code {
+    font-family: monospace;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-secondary);
+    background: var(--color-surface-hover);
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+    min-width: 140px;
+}
+
+.list-item-info {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.list-item-name {
+    font-weight: 600;
+    font-size: var(--font-size-base);
+    color: var(--color-text);
+}
+
+.list-item-details {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    display: flex;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+}
+
+.list-item-details span {
+    background: var(--color-surface-hover);
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+}
+
+.list-item-price {
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    color: var(--color-primary);
+    min-width: 80px;
+    text-align: right;
+}
+
+.list-item-stock {
+    min-width: 100px;
+    text-align: center;
+}
+
+.list-item-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    align-items: center;
+}
+
+/* Responsive para lista */
+@media (max-width: 768px) {
+    .list-item {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-sm);
+    }
+    
+    .list-item-code,
+    .list-item-price,
+    .list-item-stock {
+        text-align: left;
+    }
+    
+    .list-item-actions {
+        justify-content: flex-start;
+        flex-wrap: wrap;
+    }
+}

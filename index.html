@@ -48,24 +48,40 @@
 
     <!-- CONTENIDO PRINCIPAL -->
     <main class="app-main">
-        <!-- VISTA: CATÁLOGO -->
-        <section id="view-catalog" class="view active">
-            <div class="view-header">
-                <h2>Catálogo de Prendas</h2>
-                <button id="btn-refresh" class="btn-secondary" title="Recargar inventario">
-                    🔄 Actualizar
-                </button>
-            </div>
-            <div id="search-bar" class="search-bar">
-                <input type="search" id="input-search" placeholder="Buscar por código o nombre..." aria-label="Buscar prendas">
-            </div>
-            <div id="catalog-grid" class="catalog-grid">
-                <div class="loading-state">
-                    <div class="spinner"></div>
-                    <p>Cargando inventario...</p>
-                </div>
-            </div>
-        </section>
+       <!-- VISTA: CATÁLOGO -->
+<section id="view-catalog" class="view active">
+    <div class="view-header">
+        <h2>Catálogo de Prendas</h2>
+        <div class="header-actions-catalog">
+            <button id="btn-view-toggle" class="btn-secondary" title="Cambiar vista" onclick="toggleCatalogView()">
+                <span id="toggle-icon">☰</span>
+                <span id="toggle-text">Lista</span>
+            </button>
+            <button id="btn-refresh" class="btn-secondary" title="Recargar inventario">
+                🔄 Actualizar
+            </button>
+        </div>
+    </div>
+    <div id="search-bar" class="search-bar">
+        <input type="search" id="input-search" placeholder="Buscar por código, nombre, talla o color..." aria-label="Buscar prendas">
+    </div>
+    
+    <!-- Vista Grid (por defecto) -->
+    <div id="catalog-grid" class="catalog-grid">
+        <div class="loading-state">
+            <div class="spinner"></div>
+            <p>Cargando inventario...</p>
+        </div>
+    </div>
+    
+    <!-- Vista Lista (oculta por defecto) -->
+    <div id="catalog-list" class="catalog-list hidden">
+        <div class="loading-state">
+            <div class="spinner"></div>
+            <p>Cargando inventario...</p>
+        </div>
+    </div>
+</section>
 
        <!-- VISTA: CARRITO -->
 <section id="view-cart" class="view">

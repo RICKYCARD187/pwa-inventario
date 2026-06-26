@@ -644,10 +644,30 @@ function renderOrders() {
         const items = order.items || [];
         const total = parseFloat(order.total) || items.reduce((s, i) => s + (parseFloat(i.precio) * parseInt(i.cantidad)), 0);
 
+        // Información del cliente
+        const clientInfo = order.cliente ? `
+            <div class="order-client-info">
+                <div class="client-row"><strong>👤 Cliente:</strong> ${order.cliente}</div>
+                <div class="client-row"><strong>📞 Teléfono:</strong> ${order.telefono || 'N/A'}</div>
+                <div class="client-row"><strong>📍 Dirección:</strong> ${order.direccion || 'N/A'}</div>
+                <div class="client-row"><strong>🏙️ Ciudad:</strong> ${order.ciudad || 'N/A'}</div>
+            </div>
+        ` : '';
+
         const itemsHtml = items.map(item => `
             <div class="order-item-row">
-                <span>${item.nombre || item.codigo} × ${item.cantidad}</span>
-                <span>$${((parseFloat(item.precio) || 0) * parseInt(item.cantidad)).toFixed(2)}</span>
+                <div>
+                    <strong>${item.producto || item.nombre || item.codigo}</strong>
+                    <div class="item-details">
+                        ${item.talla ? `Talla: ${item.talla}` : ''} 
+                        ${item.color ? `• Color: ${item.color}` : ''}
+                        ${item.codigo ? `• Código: ${item.codigo}` : ''}
+                    </div>
+                </div>
+                <div class="item-qty-price">
+                    <div>Cant: ${item.cantidad}</div>
+                    <div>Bs ${((parseFloat(item.precio) || 0) * parseInt(item.cantidad)).toFixed(2)}</div>
+                </div>
             </div>
         `).join('');
 
@@ -664,17 +684,26 @@ function renderOrders() {
                 <div class="order-header">
                     <div>
                         <div class="order-id">Pedido #${order.id || order.orderId || 'N/A'}</div>
-                        <div class="order-date">${order.fecha ? new Date(order.fecha).toLocaleString('es-ES') : 'Sin fecha'}</div>
+                        <div class="order-date">
+                            📅 ${order.fecha || 'Sin fecha'} 
+                            ${order.hora ? `• 🕐 ${order.hora}` : ''}
+                        </div>
                     </div>
                     <span class="status-badge ${statusClass}">${status}</span>
                 </div>
+                
+                ${clientInfo}
+                
                 <div class="order-items">
+                    <h4>📦 Productos:</h4>
                     ${itemsHtml || '<p style="color: var(--color-text-secondary); font-size: 0.875rem;">Sin detalle de productos</p>'}
                 </div>
+                
                 <div class="order-total">
                     <span>Total:</span>
-                    <span>$${total.toFixed(2)}</span>
+                    <span>Bs ${total.toFixed(2)}</span>
                 </div>
+                
                 ${actionButton}
             </div>
         `;

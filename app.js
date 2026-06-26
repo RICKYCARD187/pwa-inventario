@@ -11,6 +11,7 @@ let appState = {
     cart: [],
     orders: [],
     currentView: 'catalog',
+    catalogViewMode: 'grid', // ← AGREGAR ESTA LÍNEA
     theme: 'light'
 };
 
@@ -407,7 +408,6 @@ async function fetchOrders() {
 // RENDERIZADO DE CATÁLOGO
 // ============================================
 function renderCatalog(searchTerm = '') {
-    const grid = document.getElementById('catalog-grid');
     const term = searchTerm.toLowerCase().trim();
 
     let items = appState.inventory;
@@ -419,6 +419,22 @@ function renderCatalog(searchTerm = '') {
             item.color?.toLowerCase().includes(term)
         );
     }
+
+    // Renderizar en la vista activa (grid o lista)
+    if (appState.catalogViewMode === 'grid') {
+        renderCatalogGrid(items, term);
+    } else {
+        renderCatalogList(items, term);
+    }
+}
+
+// Vista Grid (cards)
+function renderCatalogGrid(items, term) {
+    const grid = document.getElementById('catalog-grid');
+    const list = document.getElementById('catalog-list');
+    
+    grid.classList.remove('hidden');
+    list.classList.add('hidden');
 
     if (items.length === 0) {
         grid.innerHTML = `
@@ -446,6 +462,125 @@ function renderCatalog(searchTerm = '') {
 
         const cartItem = appState.cart.find(c => c.codigo === item.codigo);
         const currentQty = cartItem ? cartItem.cantidad : 1;
+
+        const extraInfo = [];
+        if (item.talla) extraInfo.push(`Talla: ${item.talla}`);
+        if (item.color) extraInfo.push(`Color: ${item.color}`);
+        const extraInfoHtml = extraInfo.length > 0 
+            ? `<div class="product-extra-info">${extraInfo.join(' • ')}</div>` 
+            : '';
+
+        return `
+            <div class="product-card" data-code="${item.codigo}">
+                <span class="product-code">${item.codigo || 'S/C'}</span>
+                <h3 class="product-name">${item.nombre || 'Sin nombre'}</h3>
+                ${extraInfoHtml}
+                <div class="product-price">$${price.toFixed(2)}</div>
+                <div class="product-stock">
+                    <span class="stock-badge ${stockClass}">${stockText}</span>
+                </div>
+                <div class="product-actions">
+                    <div class="quantity-control">
+                        <button onclick="changeQty('${item.codigo}', -1)" ${stock === 0 ? 'disabled' : ''}>−</button>
+                        <input type="number" id="qty-${item.codigo}" value="${currentQty}" min="1" max="${stock}" onchange="validateQty('${item.codigo}', ${stock})">
+                        <button onclick="changeQty('${item.codigo}', 1)" ${stock === 0 ? 'disabled' : ''}>+</button>
+                    </div>
+                    <button class="btn-primary btn-sm" onclick="addToCart('${item.codigo}')" ${stock === 0 ? 'disabled' : ''}>
+                        ${cartItem ? '🔄 Actualizar' : '🛒 Agregar'}
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Vista Lista (horizontal detallada)
+function renderCatalogList(items, term) {
+    const grid = document.getElementById('catalog-grid');
+    const list = document.getElementById('catalog-list');
+    
+    grid.classList.add('hidden');
+    list.classList.remove('hidden');
+
+    if (items.length === 0) {
+        list.innerHTML = `
+            <div class="empty-state">
+                <span class="empty-icon">🔍</span>
+                <p>${term ? 'No se encontraron productos' : 'No hay productos en el inventario'}</p>
+            </div>
+        `;
+        return;
+    }
+
+    list.innerHTML = items.map(item => {
+        const stock = parseInt(item.stock) || 0;
+        const price = parseFloat(item.precio) || 0;
+        let stockClass = 'stock-available';
+        let stockText = `Stock: ${stock}`;
+
+        if (stock === 0) {
+            stockClass = 'stock-out';
+            stockText = 'Agotado';
+        } else if (stock <= 5) {
+            stockClass = 'stock-low';
+            stockText = `Stock: ${stock}`;
+        }
+
+        const cartItem = appState.cart.find(c => c.codigo === item.codigo);
+        const currentQty = cartItem ? cartItem.cantidad : 1;
+
+        const details = [];
+        if (item.talla) details.push(`<span>Talla: ${item.talla}</span>`);
+        if (item.color) details.push(`<span>Color: ${item.color}</span>`);
+        const detailsHtml = details.join('');
+
+        return `
+            <div class="list-item" data-code="${item.codigo}">
+                <div class="list-item-code">${item.codigo || 'S/C'}</div>
+                <div class="list-item-info">
+                    <div class="list-item-name">${item.nombre || 'Sin nombre'}</div>
+                    <div class="list-item-details">${detailsHtml}</div>
+                </div>
+                <div class="list-item-price">Bs ${price.toFixed(2)}</div>
+                <div class="list-item-stock">
+                    <span class="stock-badge ${stockClass}">${stockText}</span>
+                </div>
+                <div class="list-item-actions">
+                    <div class="quantity-control">
+                        <button onclick="changeQty('${item.codigo}', -1)" ${stock === 0 ? 'disabled' : ''}>−</button>
+                        <input type="number" id="qty-list-${item.codigo}" value="${currentQty}" min="1" max="${stock}" onchange="validateQty('${item.codigo}', ${stock})">
+                        <button onclick="changeQty('${item.codigo}', 1)" ${stock === 0 ? 'disabled' : ''}>+</button>
+                    </div>
+                    <button class="btn-primary btn-sm" onclick="addToCart('${item.codigo}')" ${stock === 0 ? 'disabled' : ''}>
+                        ${cartItem ? '🔄' : '🛒'}
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Función para alternar entre vistas
+function toggleCatalogView() {
+    appState.catalogViewMode = appState.catalogViewMode === 'grid' ? 'list' : 'grid';
+    
+    const icon = document.getElementById('toggle-icon');
+    const text = document.getElementById('toggle-text');
+    
+    if (appState.catalogViewMode === 'grid') {
+        icon.textContent = '☰';
+        text.textContent = 'Lista';
+    } else {
+        icon.textContent = '⊞';
+        text.textContent = 'Grid';
+    }
+    
+    // Re-renderizar con la nueva vista
+    const searchTerm = document.getElementById('input-search').value;
+    renderCatalog(searchTerm);
+    
+    showToast(`Vista cambiada a: ${appState.catalogViewMode === 'grid' ? 'Cuadrícula' : 'Lista'}`, 'info');
+}
 
         // Construir información adicional (talla y color)
         const extraInfo = [];
@@ -480,23 +615,21 @@ function renderCatalog(searchTerm = '') {
 }
 
 function changeQty(code, delta) {
-    const input = document.getElementById(`qty-${code}`);
+    // Buscar el input en ambas vistas (grid y lista)
+    let input = document.getElementById(`qty-${code}`) || document.getElementById(`qty-list-${code}`);
     const item = appState.inventory.find(i => i.codigo === code);
-    if (!item) return;
+    if (!item || !input) return;
 
     const maxStock = parseInt(item.stock) || 0;
     let newVal = parseInt(input.value) + delta;
     if (newVal < 1) newVal = 1;
     if (newVal > maxStock) newVal = maxStock;
-    input.value = newVal;
-}
-
-function validateQty(code, maxStock) {
-    const input = document.getElementById(`qty-${code}`);
-    let val = parseInt(input.value);
-    if (isNaN(val) || val < 1) val = 1;
-    if (val > maxStock) val = maxStock;
-    input.value = val;
+    
+    // Actualizar ambos inputs si existen
+    const inputGrid = document.getElementById(`qty-${code}`);
+    const inputList = document.getElementById(`qty-list-${code}`);
+    if (inputGrid) inputGrid.value = newVal;
+    if (inputList) inputList.value = newVal;
 }
 
 // ============================================
@@ -506,7 +639,8 @@ function addToCart(code) {
     const item = appState.inventory.find(i => i.codigo === code);
     if (!item) return;
 
-    const qtyInput = document.getElementById(`qty-${code}`);
+    // Buscar la cantidad en ambas vistas
+    const qtyInput = document.getElementById(`qty-${code}`) || document.getElementById(`qty-list-${code}`);
     const quantity = parseInt(qtyInput?.value) || 1;
     const maxStock = parseInt(item.stock) || 0;
 
@@ -525,16 +659,17 @@ function addToCart(code) {
             codigo: item.codigo,
             nombre: item.nombre,
             precio: parseFloat(item.precio) || 0,
-            cantidad: quantity
+            cantidad: quantity,
+            talla: item.talla || '',
+            color: item.color || ''
         });
-        showToast(`Agregado: ${item.nombre}`, 'success');
+        showToast(`✅ Agregado: ${item.nombre}`, 'success');
     }
 
     saveStateToStorage();
     updateCartBadge();
     renderCatalog(document.getElementById('input-search').value);
 }
-
 function removeFromCart(code) {
     appState.cart = appState.cart.filter(item => item.codigo !== code);
     saveStateToStorage();

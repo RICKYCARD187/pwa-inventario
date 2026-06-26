@@ -265,6 +265,98 @@ async function submitOrder() {
                     hora: new Date().toLocaleTimeString('es-ES')
                 };
 
+                // Enviar como text/plain para evitar problemas CORS
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'cors',
+                    redirect: 'follow',
+                    headers: {
+                        'Content-Type': 'text/plain;charset=utf-8',
+                    },
+                    body: JSON.stringify(orderData)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Error HTTP: ${response.status}`);
+                }
+
+                const result = await response.json();
+
+                if (result.success || result.result === 'ok') {
+                    // Limpiar carrito
+                    appState.cart = [];
+                    saveStateToStorage();
+                    
+                    // Limpiar formulario de cliente
+                    document.getElementById('input-cliente').value = '';
+                    document.getElementById('input-telefono').value = '';
+                    document.getElementById('input-direccion').value = '';
+                    document.getElementById('input-ciudad').value = '';
+                    
+                    renderCart();
+                    updateCartBadge();
+                    
+                    // Mostrar mensaje de éxito
+                    showToast('✅ Pedido registrado correctamente', 'success');
+                    
+                    // CAMBIAR AUTOMÁTICAMENTE A VISTA DE PEDIDOS después de 1.5 segundos
+                    setTimeout(() => {
+                        switchView('admin');
+                        fetchOrders();
+                    }, 1500);
+                } else {
+                    throw new Error(result.message || 'Error al registrar el pedido');
+                }
+            } catch (error) {
+                console.error('Error al enviar pedido:', error);
+                showToast('❌ Error: ' + error.message, 'error');
+            } finally {
+                btnSubmit.disabled = false;
+                btnSubmit.textContent = '✅ Confirmar Pedido';
+            }
+        }
+    );
+}
+
+    // Validar datos del cliente
+    const cliente = document.getElementById('input-cliente')?.value.trim();
+    const telefono = document.getElementById('input-telefono')?.value.trim();
+    const direccion = document.getElementById('input-direccion')?.value.trim();
+    const ciudad = document.getElementById('input-ciudad')?.value.trim();
+
+    if (!cliente || !telefono || !direccion || !ciudad) {
+        showToast('⚠️ Completa todos los datos del cliente', 'error');
+        return;
+    }
+
+    openModal(
+        'Confirmar Pedido',
+        `Se generará un pedido para ${cliente} con ${appState.cart.length} producto(s). ¿Deseas continuar?`,
+        async () => {
+            const btnSubmit = document.getElementById('btn-submit-order');
+            btnSubmit.disabled = true;
+            btnSubmit.textContent = 'Procesando...';
+
+            try {
+                const orderData = {
+                    action: 'saveOrder',
+                    cliente: cliente,
+                    telefono: telefono,
+                    direccion: direccion,
+                    ciudad: ciudad,
+                    items: appState.cart.map(item => ({
+                        codigo: item.codigo,
+                        producto: item.nombre,
+                        talla: item.talla || '',
+                        color: item.color || '',
+                        precio: item.precio,
+                        cantidad: item.cantidad
+                    })),
+                    total: calculateCartTotal(),
+                    fecha: new Date().toLocaleDateString('es-ES'),
+                    hora: new Date().toLocaleTimeString('es-ES')
+                };
+
                 // SOLUCIÓN CORS: Enviar como text/plain para evitar preflight
                 const response = await fetch(SCRIPT_URL, {
                     method: 'POST',

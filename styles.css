@@ -958,3 +958,52 @@ input {
         grid-template-columns: 1fr;
     }
 }
+
+/* ============================================
+   INFORMACIÓN DEL CLIENTE EN PEDIDOS
+   ============================================ */
+.order-client-info {
+    background: var(--color-primary-light);
+    border-left: 4px solid var(--color-primary);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+    margin: var(--spacing-md) 0;
+}
+
+.client-row {
+    padding: var(--spacing-xs) 0;
+    font-size: var(--font-size-sm);
+    color: var(--color-text);
+}
+
+.client-row strong {
+    color: var(--color-primary);
+    margin-right: var(--spacing-xs);
+}
+
+.item-details {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-secondary);
+    margin-top: 2px;
+}
+
+.item-qty-price {
+    text-align: right;
+    font-size: var(--font-size-sm);
+}
+
+.item-qty-price div:first-child {
+    color: var(--color-text-secondary);
+}
+
+.item-qty-price div:last-child {
+    font-weight: 600;
+    color: var(--color-primary);
+}
+
+.order-items h4 {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    margin-bottom: var(--spacing-sm);
+    color: var(--color-text-secondary);
+}

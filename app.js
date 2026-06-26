@@ -166,33 +166,50 @@ async function fetchInventory() {
 
     try {
         const url = `${SCRIPT_URL}?action=getStock`;
+        console.log('🔍 Haciendo petición a:', url);
+        
         const response = await fetch(url);
+        console.log('📡 Respuesta recibida, status:', response.status);
 
         if (!response.ok) {
-            throw new Error(`Error HTTP: ${response.status}`);
+            throw new Error(`Error HTTP: ${response.status} - ${response.statusText}`);
         }
 
-        const data = await response.json();
+        const responseText = await response.text();
+        console.log('📄 Respuesta cruda:', responseText);
 
-        if (data.success && data.data) {
+        let data;
+        try {
+            data = JSON.parse(responseText);
+        } catch (parseError) {
+            console.error('❌ No se pudo parsear JSON:', responseText);
+            throw new Error('La respuesta no es JSON válido: ' + responseText.substring(0, 100));
+        }
+
+        console.log('✅ Datos parseados:', data);
+
+        if (data.success !== undefined && data.data !== undefined) {
             appState.inventory = data.data;
             renderCatalog();
+            showToast('Inventario cargado correctamente', 'success');
         } else {
-            throw new Error(data.message || 'Error al obtener el inventario');
+            throw new Error('Formato de respuesta inesperado: ' + JSON.stringify(data));
         }
     } catch (error) {
-        console.error('Error al obtener inventario:', error);
+        console.error('❌ Error completo:', error);
         grid.innerHTML = `
             <div class="error-state" style="grid-column: 1 / -1;">
                 <p>⚠️ Error al cargar el inventario</p>
-                <p style="font-size: 0.875rem; margin-top: 8px;">${error.message}</p>
+                <p style="font-size: 0.875rem; margin-top: 8px; color: var(--color-danger);">${error.message}</p>
+                <p style="font-size: 0.75rem; margin-top: 8px; color: var(--color-text-secondary);">
+                    URL: ${SCRIPT_URL}
+                </p>
                 <button class="btn-primary mt-md" onclick="fetchInventory()">Reintentar</button>
             </div>
         `;
-        showToast('Error al cargar inventario', 'error');
+        showToast('Error: ' + error.message, 'error');
     }
 }
-
 // Enviar pedido
 async function submitOrder() {
     if (appState.cart.length === 0) {
